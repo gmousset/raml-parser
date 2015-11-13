@@ -15,7 +15,7 @@ class YamlParser(source: Source) extends RegexParsers {
   def parse(): Boolean = {
     for (line <- source.getLines()) {
 
-      parse(mappingValue, line) match {
+      parse(cMappingValue, line) match {
         case Success(matched, _) => logger.debug(matched)
         case _ => Unit
       }
