@@ -304,6 +304,43 @@ class YamlParser(source: Source) extends RegexParsers {
   def nsFlowNode(n: Int, c: Context):Parser[Any] = cNsAliasNode | nsFlowContent(n, c) |
     (cNsProperties(n, c) ~ ((sSeparate(n, c) ~ nsFlowContent(n, c)) | eScalar))
 
+  /*
+   * Block Styles
+   */
+
+  // Block Scalar Styles
+    // Block Scalar Headers
+  def getChomping(s:String):Chomping = s match {
+    case "-" => Strip("strip")
+    case "+" => Keep("keep")
+    case ""  => Clip("clip")
+    case _   => Unknown("unknown")
+  }
+
+  def cBBlockHeader(m:Int, t:Chomping):Parser[Any] = ((cIndentationIndicator ~ cChompingIndicator) |
+    (cChompingIndicator ~ cIndentationIndicator)) ~ sBComment
+  def cIndentationIndicator:Parser[Any] = nsDecDigit | ""
+  def cChompingIndicator:Parser[Any] = "-" | "+" | ""
+  def bChompedLast(t:Chomping):Parser[Any] = t match {
+    case Strip => bNonContent
+    case Clip  => bAsLineFeed
+    case Keep  => bAsLineFeed
+  }
+  def lChompedEmpty(n:Int, t:Chomping):Parser[Any] = t match {
+    case Strip => lStripEmpty(n)
+    case Clip  => lStripEmpty(n)
+    case Keep  => lKeepEmpty(n)
+  }
+
+  def lStripEmpty(n:Int):Parser[Any] = rep(sIndentEqualOrLessThan(n) ~ bNonContent) ~ lTrailComments(n)?
+  def lKeepEmpty(n:Int):Parser[Any] = rep(lEmpty(n, BlockIn("block-in"))) ~ lTrailComments(n)?
+  def lTrailComments(n:Int):Parser[Any] = sIndentLessThan(n) ~ cNbCommentText ~ bComment ~ rep(lComment)
+    // Literal Styles
+  def cLpLiteral(n:Int):Parser[Any] = "|" ~ cBBlockHeader()
+
+
+
+
 
 
 
@@ -330,6 +367,12 @@ class YamlParser(source: Source) extends RegexParsers {
   case class FlowIn(override val s: String) extends Context(s)
   case class BlockKey(override val s:String) extends Context(s)
   case class FlowKey(override val s:String) extends Context(s)
+
+  case class Chomping(s:String)
+  case class Strip(override val s:String) extends Chomping(s)
+  case class Keep(override val s:String) extends Chomping(s)
+  case class Clip(override val s:String) extends Chomping(s)
+  case class Unknown(override val s:String) extends Chomping(s)
 }
 
 
