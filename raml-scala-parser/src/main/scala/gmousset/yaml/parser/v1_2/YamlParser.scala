@@ -579,7 +579,36 @@ class YamlParser(source: Source) extends RegexParsers {
     case BlockIn  => n
   }
 
+  /*
+   * YAML Character Stream
+   */
 
+  // Documents
+    // Document Prefix
+  // 202
+  def lDocumentPrefix:Parser[Any] = opt(cByteOrderMask) ~ rep(lComment)
+    // Document Markers
+  // 203
+  def cDirectivesEnd:Parser[Any] = "-" ~ "-" ~ "-"
+  // 204
+  def cDocumentEnd:Parser[Any] = "." ~ "." ~ "."
+  // 205
+  def lDocumentSuffix:Parser[Any] = cDocumentEnd ~ sLComments
+  // 206
+  def cForbidden:Parser[Any] = (cDirectivesEnd | cDocumentEnd) ~ (bChar | sWhite /*| TODO end of file */)
+    // Bare Documents
+  // 207
+  def lBareDocument:Parser[Any] = sLpBlockNode(-1, BlockIn("block-in"))
+    // Explicit Documents
+  // 208
+  def lExplicitDocument:Parser[Any] = cDirectivesEnd ~ (lBareDocument | (eNode ~ sLComments))
+    // Directives Documents
+  // 209
+  def lDirectiveDocument:Parser[Any] = rep1(lDirective) ~ lExplicitDocument
+  // 210
+  def lAnyDocument:Parser[Any] = lDirectiveDocument | lExplicitDocument | lBareDocument
+  // 211
+  def lYamlStream:Parser[Any] = rep(lDocumentPrefix) ~ opt(lAnyDocument) ~ rep(rep1(lDocumentSuffix) ~ rep(lDocumentPrefix) ~ opt(lAnyDocument) | rep(lDocumentPrefix) ~ opt(lExplicitDocument))
 
 
   def parse(): Boolean = {
