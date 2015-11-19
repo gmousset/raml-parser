@@ -308,19 +308,23 @@ class YamlParser(source: Source) extends RegexParsers {
    * Block Styles
    */
 
-  // Block Scalar Styles
-    // Block Scalar Headers
-  def getChomping(s:String):Chomping = s match {
-    case "-" => Strip("strip")
-    case "+" => Keep("keep")
-    case ""  => Clip("clip")
-    case _   => Unknown("unknown")
-  }
-
   def cBBlockHeader(m:Int, t:Chomping):Parser[Any] = ((cIndentationIndicator ~ cChompingIndicator) |
     (cChompingIndicator ~ cIndentationIndicator)) ~ sBComment
-  def cIndentationIndicator:Parser[Any] = nsDecDigit | ""
-  def cChompingIndicator:Parser[Any] = "-" | "+" | ""
+
+  var m:Int
+  var t:Chomping
+
+  def cIndentationIndicator:Parser[Any] = (nsDecDigit | "") ^^ {x:String => x match { // TODO: may be...
+    case "" => -1
+    case _  => x.toInt
+  }}
+
+  def cChompingIndicator:Parser[Any] = "-" | "+" | "" ^^ {x:String => x match { // TODO: may be...
+    case "-" => t = Strip("strip")
+    case "+" => t = Keep("keep")
+    case ""  => t = Clip("clip")
+  }}
+
   def bChompedLast(t:Chomping):Parser[Any] = t match {
     case Strip => bNonContent
     case Clip  => bAsLineFeed
@@ -336,10 +340,12 @@ class YamlParser(source: Source) extends RegexParsers {
   def lKeepEmpty(n:Int):Parser[Any] = rep(lEmpty(n, BlockIn("block-in"))) ~ lTrailComments(n)?
   def lTrailComments(n:Int):Parser[Any] = sIndentLessThan(n) ~ cNbCommentText ~ bComment ~ rep(lComment)
     // Literal Styles
-  def cLpLiteral(n:Int):Parser[Any] = "|" ~ cBBlockHeader()
-
-
-
+  def cLpLiteral(n:Int):Parser[Any] = "|" ~ cBBlockHeader(m, t) ~ lLiteralContent(n + m, t)
+  def lNbLiteralText(n:Int):Parser[Any] = rep(lEmpty(n, BlockIn("block-in"))) ~ sIndent(n) ~ rep1(nbChar)
+  def bNbLiteralNext(n:Int):Parser[Any] = bAsLineFeed ~ lNbLiteralText(n)
+  def lLiteralContent(n:Int, t:Chomping):Parser[Any] = opt(lNbLiteralText(n) ~ rep(bNbLiteralNext(n)) ~ bChompedLast(t)) ~ lChompedEmpty(n, t)
+    // Folded Style
+  def cLFolded(n:Int):Parser[Any] = ">" ~ cBBlockHeader(m, t)
 
 
 
