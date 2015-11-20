@@ -182,7 +182,7 @@ class YamlParser extends RegexParsers {
 
   // Separation Spaces
   // 66
-  def sSeparateInLine:Parser[Any] = log(rep1(sWhite) | startOfLine)("66") // TODO:must add start of line
+  def sSeparateInLine:Parser[Any] = log(rep1(sWhite) | (startOfLine) <~ "" )("66") // TODO:must add start of line
 
   // TODO
   def startOfLine:Parser[Any] = log("^.*".r)("start of line")
@@ -610,7 +610,7 @@ class YamlParser extends RegexParsers {
 
 
   def parse(file:String): Boolean = {
-    val result:ParseResult[Any] = parseAll(lYamlStream, new FileReader(file))
+    val result:ParseResult[Any] = parseAll(lExplicitDocument, new FileReader(file))
     result match {
       case Success(_,_) => true
       case _ => false
