@@ -1,16 +1,17 @@
 package gmousset.yaml.parser.v1_2
 
+import java.io.FileReader
+
 import org.slf4j.LoggerFactory
 
-import scala.io.Source
 import scala.util.parsing.combinator._
 
 /**
   * Created by Gwendal Mousset on 13/11/2015.
   */
-class YamlParser(source: Source) extends RegexParsers {
+class YamlParser extends RegexParsers {
 
-  val logger = LoggerFactory.getLogger(this.getClass)
+  //val logger = LoggerFactory.getLogger(this.getClass)
   var m:Int = _
   var t:Chomping = _
 
@@ -20,102 +21,102 @@ class YamlParser(source: Source) extends RegexParsers {
    */
   // Character Set
   // 1
-  def cPrintable:Parser[String] = "\\u0009" | "\\u000A" | "\\u000D" | "[\\u0020-\\u007E]" | "\\u0085" |
-    "[\\u00A0-\\uD7FF]" | "[\\uE000-\\uFFFD]" | "[\\u10000-\\u10FFFF]"
+  def cPrintable:Parser[String] = log("\\u0009" | "\\u000A" | "\\u000D" | "[\\u0020-\\u007E]" | "\\u0085" |
+    "[\\u00A0-\\uD7FF]" | "[\\uE000-\\uFFFD]" | "[\\u10000-\\u10FFFF]")("1")
   // 2
-  def nbJson:Parser[String] = "\\u0009" | "[\\u0020-\\u10FFFF]"
+  def nbJson:Parser[String] = log("\\u0009" | "[\\u0020-\\u10FFFF]")("2")
 
   // Character Encodings
   // 3
-  def cByteOrderMask:Parser[String] = "\\uFEFF"
+  def cByteOrderMask:Parser[String] = log("\\uFEFF")("3")
 
   // Indicator Characters
   // 4
-  def cSequenceEntry:Parser[String] = "-"
+  def cSequenceEntry:Parser[String] = log("-")("4")
   // 5
-  def cMappingKey:Parser[String] = "?"
+  def cMappingKey:Parser[String] = log("?")("5")
   // 6
-  def cMappingValue:Parser[String] = ":"
+  def cMappingValue:Parser[String] = log(":")("6")
   // 7
-  def cCollectEntry:Parser[String] = ","
+  def cCollectEntry:Parser[String] = log(",")("7")
   // 8
-  def cSequenceStart:Parser[String] = "["
+  def cSequenceStart:Parser[String] = log("[")("8")
   // 9
-  def cSequenceEnd:Parser[String] = "]"
+  def cSequenceEnd:Parser[String] = log("]")("9")
   // 10
-  def cMappingStart:Parser[String] = "{"
+  def cMappingStart:Parser[String] = log("{")("10")
   // 11
-  def cMappingEnd:Parser[String] = "}"
+  def cMappingEnd:Parser[String] = log("}")("11")
   // 12
-  def cComment:Parser[String] = "#"
+  def cComment:Parser[String] = log("#")("12")
   // 13
-  def cAnchor:Parser[String] = "&"
+  def cAnchor:Parser[String] = log("&")("13")
   // 14
-  def cAlias:Parser[String] = "*"
+  def cAlias:Parser[String] = log("*")("14")
   // 15
-  def cTag:Parser[String] = "!"
+  def cTag:Parser[String] = log("!")("15")
   // 16
-  def cLiteral:Parser[String] = "|"
+  def cLiteral:Parser[String] = log("|")("16")
   // 17
-  def cFolded:Parser[String] = ">"
+  def cFolded:Parser[String] = log(">")("17")
   // 18
-  def cSingleQuote:Parser[String] = "'"
+  def cSingleQuote:Parser[String] = log("'")("18")
   // 19
-  def cDoubleQuote:Parser[String] = "\""
+  def cDoubleQuote:Parser[String] = log("\"")("19")
   // 20
-  def cDirective:Parser[String] = "%"
+  def cDirective:Parser[String] = log("%")("20")
   // 21
-  def cReserved:Parser[String] = "@" | "`"
+  def cReserved:Parser[String] = log("@" | "`")("21")
   // 22
-  def cIndicator:Parser[String] = cSequenceEntry | cMappingKey | cMappingValue | cCollectEntry | cSequenceStart |
+  def cIndicator:Parser[String] = log(cSequenceEntry | cMappingKey | cMappingValue | cCollectEntry | cSequenceStart |
     cSequenceEnd | cMappingStart | cMappingEnd | cComment | cAnchor | cAlias | cTag | cLiteral | cFolded |
-    cSingleQuote | cDoubleQuote | cDirective | cReserved
+    cSingleQuote | cDoubleQuote | cDirective | cReserved)("22")
   // 23
-  def cFlowIndicator:Parser[String] = cCollectEntry | cSequenceStart | cSequenceEnd | cMappingStart | cMappingEnd
+  def cFlowIndicator:Parser[String] = log(cCollectEntry | cSequenceStart | cSequenceEnd | cMappingStart | cMappingEnd)("23")
 
   // Line Break Characters
   // 24
-  def bLineFeed:Parser[String] = "\\u000A"
+  def bLineFeed:Parser[String] = log("\\u000A")("23")
   // 25
-  def bCarriageReturn:Parser[String] = "\\u000D"
+  def bCarriageReturn:Parser[String] = log("\\u000D")("25")
   // 26
-  def bChar:Parser[String] = bLineFeed | bCarriageReturn
+  def bChar:Parser[String] = log(bLineFeed | bCarriageReturn)("26")
   // 27
-  def nbChar:Parser[String] = "\\u0009" | "[\\u0020-\\u007E]" | "\\u0085" |
-    "[\\u00A0-\\uD7FF]" | "[\\uE000-\\uFFFD]" | "[\\u10000-\\u10FFFF]"  // TODO: order mask not removed
+  def nbChar:Parser[String] = log("\\u0009" | "[\\u0020-\\u007E]" | "\\u0085" |
+    "[\\u00A0-\\uD7FF]" | "[\\uE000-\\uFFFD]" | "[\\u10000-\\u10FFFF]")("27")  // TODO: order mask not removed
   // 28
-  def bBreak:Parser[String] = bCarriageReturn | bLineFeed | bCarriageReturn | bLineFeed
+  def bBreak:Parser[String] = log(bCarriageReturn | bLineFeed | bCarriageReturn | bLineFeed)("28")
   // 29
-  def bAsLineFeed:Parser[String] = bBreak
+  def bAsLineFeed:Parser[String] = log(bBreak)("29")
   // 30
-  def bNonContent:Parser[String] = bBreak
+  def bNonContent:Parser[String] = log(bBreak)("30")
 
   // White Space Characters
   // 31
-  def sSpace:Parser[String] = "\\u0020"
+  def sSpace:Parser[String] = log("\\u0020")("31")
   // 32
-  def sTab:Parser[String] = "\\u0009"
+  def sTab:Parser[String] = log("\\u0009")("32")
   // 33
-  def sWhite:Parser[String] = sSpace | sTab
+  def sWhite:Parser[String] = log(sSpace | sTab)("33")
   // 34
-  def nsChar:Parser[String] = "[\\u0021-\\u007E]" | "\\u0085" |
-    "[\\u00A0-\\uD7FF]" | "[\\uE000-\\uFFFD]" | "[\\u10000-\\u10FFFF]"
+  def nsChar:Parser[String] = log("[\\u0021-\\u007E]".r | "\\u0085" |
+    "[\\u00A0-\\uD7FF]".r | "[\\uE000-\\uFFFD]".r | "[\\u10000-\\u10FFFF]".r)("34")
 
   // Miscellaneous Characters
   // 35
-  def nsDecDigit:Parser[String] = "[\\u0030-\\u0039]"
+  def nsDecDigit:Parser[String] = log("[\\u0030-\\u0039]".r)("35")
   // 36
-  def nsHexDigit:Parser[String] = nsDecDigit | "[\\u0041-\\u0046]" | "[\\u0061-\\u0066]"
+  def nsHexDigit:Parser[String] = log(nsDecDigit | "[\\u0041-\\u0046]".r | "[\\u0061-\\u0066]".r)("36")
   // 37
-  def nsAsciiLetter:Parser[String] = "[\\u0041-\\u005A]" | "[\\u0061-\\u007A]"
+  def nsAsciiLetter:Parser[String] = log("[\\u0041-\\u005A]".r | "[\\u0061-\\u007A]".r)("37")
   // 38
-  def nsWordChar:Parser[String] = nsDecDigit | nsAsciiLetter | "-"
+  def nsWordChar:Parser[String] = log(nsDecDigit | nsAsciiLetter | "-")("38")
   // 39
-  def nsUriChar:Parser[Any] = "%" ~ nsHexDigit ~ nsHexDigit | nsWordChar | "#" | ";" | "/" | "?" | ":" | "@" | "&" |
-    "=" | "+" | "$" | "," | "_" | "." | "!" | "~" | "*" | "'" | "(" | ")" | "[" | "]"
+  def nsUriChar:Parser[Any] = log("%" ~ nsHexDigit ~ nsHexDigit | nsWordChar | "#" | ";" | "/" | "?" | ":" | "@" | "&" |
+    "=" | "+" | "$" | "," | "_" | "." | "!" | "~" | "*" | "'" | "(" | ")" | "[" | "]")("39")
   // 40
-  def nsTagChar:Parser[Any] = "%" ~ nsHexDigit ~ nsHexDigit | nsWordChar | "#" | ";" | "/" | "?" | ":" | "@" | "&" |
-    "=" | "+" | "$" | "_" | "." | "~" | "*" | "'" | "(" | ")"
+  def nsTagChar:Parser[Any] = log("%" ~ nsHexDigit ~ nsHexDigit | nsWordChar | "#" | ";" | "/" | "?" | ":" | "@" | "&" |
+    "=" | "+" | "$" | "_" | "." | "~" | "*" | "'" | "(" | ")")("40")
 
   // Escaped Characters
   // 41
@@ -175,31 +176,25 @@ class YamlParser(source: Source) extends RegexParsers {
   // 63
   def sIndent(n: Int):Parser[Any] = repN(n, sSpace)
   // 64
-  def sIndentLessThan(n: Int):Parser[Any] = {
-    rep(sSpace) match {
-      case Success(list:List, _) if list.length < n => Parser {Failure("failure", _)}
-      case _:ParseResult => _
-    }
-  }
+  def sIndentLessThan(n: Int):Parser[Any] = repN(m, sSpace) // TODO: false...
   // 65
-  def sIndentEqualOrLessThan(n: Int):Parser[Any] = {
-    rep(sSpace) match {
-      case Success(list:List, _) if list.length <= n => Parser {Failure("failure", _)}
-      case _:ParseResult => _
-    }
-  }
+  def sIndentEqualOrLessThan(n: Int):Parser[Any] = repN(m, sSpace)  // TODO: false...
 
   // Separation Spaces
   // 66
-  def sSeparateInLine:Parser[Any] = rep1(sWhite)  // TODO:must add start of line
+  def sSeparateInLine:Parser[Any] = log(rep1(sWhite) | startOfLine)("66") // TODO:must add start of line
+
+  // TODO
+  def startOfLine:Parser[Any] = log("^.*".r)("start of line")
+  // TODO
 
   // Line Prefixes
   // 67
   def sLinePrefix(n: Int, c:Context):Parser[Any] =  c match  {
-    case BlockOut => sBlockLinePrefix(n)
-    case BlockIn  => sBlockLinePrefix(n)
-    case FlowOut  => sFlowLinePrefix(n)
-    case FlowIn   => sFlowLinePrefix(n)
+    case BlockOut(_) => sBlockLinePrefix(n)
+    case BlockIn(_)  => sBlockLinePrefix(n)
+    case FlowOut(_)  => sFlowLinePrefix(n)
+    case FlowIn(_)   => sFlowLinePrefix(n)
   }
   // 68
   def sBlockLinePrefix(n: Int):Parser[Any] = sIndent(n)
@@ -223,26 +218,27 @@ class YamlParser(source: Source) extends RegexParsers {
 
   // Comments
   // 75
-  def cNbCommentText:Parser[Any] = "#" ~ rep(nbChar)
+  def cNbCommentText:Parser[Any] = log("#" ~ rep(nbChar))("75")
   // 76
-  def bComment:Parser[Any] = bNonContent // TODO: must add end of file
+  def bComment:Parser[Any] = log(bNonContent)("76")  // TODO: must add end of file
   // 77
-  def sBComment:Parser[Any] = opt(sSeparateInLine ~ opt(cNbCommentText)) ~ bComment
+  def sBComment:Parser[Any] = log(opt(sSeparateInLine ~ opt(cNbCommentText)) ~ bComment)("77")
   // 78
-  def lComment:Parser[Any] = sSeparateInLine ~ opt(cNbCommentText) ~ bComment
+  def lComment:Parser[Any] = log(sSeparateInLine ~ opt(cNbCommentText) ~ bComment)("78")
   // 79
-  def sLComments:Parser[Any] = (sBComment /* TODO: must add start of line */) ~ rep(sLComments)
+  def sLComments:Parser[Any] = log((sBComment /* TODO: must add start of line */) ~ rep(sLComments))("79")
 
   // Separation Lines
   // 80
-  def sSeparate(n: Int, c: Context):Parser[Any] = c match {
-    case BlockOut => sSeparateLines(n)
-    case BlockIn  => sSeparateLines(n)
-    case FlowOut  => sSeparateLines(n)
-    case FlowIn   => sSeparateLines(n)
-    case BlockKey => sSeparateInLine
-    case FlowKey  => sSeparateInLine
-  }
+  def sSeparate(n: Int, c: Context):Parser[Any] = log(c match {
+    case BlockOut(_) => sSeparateLines(n)
+    case BlockIn(_) => sSeparateLines(n)
+    case FlowOut(_) => sSeparateLines(n)
+    case FlowIn(_) => sSeparateLines(n)
+    case BlockKey(_) => sSeparateInLine
+    case FlowKey(_) => sSeparateInLine
+  })("80")
+
   // 81
   def sSeparateLines(n: Int):Parser[Any] = (sLComments ~ sFlowLinePrefix(n)) | sSeparateInLine
 
@@ -298,7 +294,7 @@ class YamlParser(source: Source) extends RegexParsers {
   // 101
   def cNsAnchorProperty:Parser[Any] = "&" ~ nsAnchorName
   // 102
-  def nsAnchorChar:Parser[Any] = "^({,},(,),\\,)" <~ nsChar
+  def nsAnchorChar:Parser[Any] = "^({,},(,),\\,)".r <~ nsChar
   // 103
   def nsAnchorName:Parser[Any] = rep1(nsAnchorChar)
 
@@ -319,17 +315,17 @@ class YamlParser(source: Source) extends RegexParsers {
   // Flow Scalar Styles
     // Double-Quoted Style
   // 107
-  def nbDoubleChar:Parser[Any] = cNsEscChar | ("^\"" ~> "^\\"  ~> nbJson)
+  def nbDoubleChar:Parser[Any] = cNsEscChar | ("^\"".r ~> "^\\".r  ~> nbJson)
   // 108
   def nsDoubleChar:Parser[Any] = sWhite ~> nbDoubleChar // TODO: probably incorrect...
   // 109
   def cDoubleQuoted(n: Int, c: Context):Parser[Any] = "\"" ~ nbDoubleText(n, c) ~ "\""
   // 110
   def nbDoubleText(n: Int, c: Context):Parser[Any] = c match {
-    case FlowOut  => nbDoubleMultiLine(n)
-    case FlowIn   => nbDoubleMultiLine(n)
-    case BlockKey => nbDoubleOneLine
-    case FlowKey  => nbDoubleOneLine
+    case FlowOut(_)  => nbDoubleMultiLine(n)
+    case FlowIn(_)   => nbDoubleMultiLine(n)
+    case BlockKey(_) => nbDoubleOneLine
+    case FlowKey(_)  => nbDoubleOneLine
   }
   // 111
   def nbDoubleOneLine:Parser[Any] = rep(nbDoubleChar)
@@ -354,10 +350,10 @@ class YamlParser(source: Source) extends RegexParsers {
   def cSingleQuoted(n: Int, c: Context):Parser[Any] = "'" ~ nbSingleText(n, c) ~ "'"
   // 121
   def nbSingleText(n: Int, c: Context):Parser[Any] = c match {
-    case FlowOut  => nbSingleMultiLine(n)
-    case FlowIn   => nbSingleMultiLine(n)
-    case BlockKey => nbSingleOneLine
-    case FlowKey  => nbSingleOneLine
+    case FlowOut(_)  => nbSingleMultiLine(n)
+    case FlowIn(_)   => nbSingleMultiLine(n)
+    case BlockKey(_) => nbSingleOneLine
+    case FlowKey(_)  => nbSingleOneLine
   }
   // 122
   def nbSingleOneLine:Parser[Any] = rep(nbSingleChar)
@@ -372,23 +368,23 @@ class YamlParser(source: Source) extends RegexParsers {
   def nsPlainFirst(c: Context):Parser[Any] = (cIndicator ~> nsChar) | (("?" | ":" | "-") ~ nsPlainSafe(c))   // TODO: incorrect
   // 127
   def nsPlainSafe(c: Context):Parser[Any] = c match {
-    case FlowOut  => nsPlainSafeOut
-    case FlowIn   => nsPlainSafeIn
-    case BlockKey => nsPlainSafeOut
-    case FlowKey  => nsPlainSafeIn
+    case FlowOut(_)  => nsPlainSafeOut
+    case FlowIn(_)   => nsPlainSafeIn
+    case BlockKey(_) => nsPlainSafeOut
+    case FlowKey(_)  => nsPlainSafeIn
   }
   // 128
   def nsPlainSafeOut:Parser[Any] = nsChar
   // 129
   def nsPlainSafeIn:Parser[Any] = cFlowIndicator ~> nsChar  // TODO: incorrect
   // 130
-  def nsPlainChar(c: Context):Parser[Any] = ("^:" ~> "^#" ~> nsPlainSafe(c)) | (nsChar ~ "#") | (":" ~ nsPlainSafe(c))  // TODO: probably incorrect
+  def nsPlainChar(c: Context):Parser[Any] = ("^:".r ~> "^#".r ~> nsPlainSafe(c)) | (nsChar ~ "#") | (":" ~ nsPlainSafe(c))  // TODO: probably incorrect
   // 131
   def nsPlain(n: Int, c: Context):Parser[Any] = c match {
-    case FlowOut  => nsPlainMultiLine(n, c)
-    case FlowIn   => nsPlainMultiLine(n, c)
-    case BlockKey => nsPlainOneLine(c)
-    case FlowKey  => nsPlainOneLine(c)
+    case FlowOut(_)  => nsPlainMultiLine(n, c)
+    case FlowIn(_)   => nsPlainMultiLine(n, c)
+    case BlockKey(_) => nsPlainOneLine(c)
+    case FlowKey(_)  => nsPlainOneLine(c)
   }
   // 132
   def nbNsPlainInLine(c: Context):Parser[Any] = rep(rep(sWhite) ~ nsPlainChar(c))
@@ -402,10 +398,10 @@ class YamlParser(source: Source) extends RegexParsers {
   // Flow Collection Styles
   // 136
   def inFlow(c: Context):Context = c match {
-    case FlowOut  => FlowIn("flow-in")
-    case FlowIn   => FlowIn("flow-in")
-    case BlockKey => FlowKey("flow-key")
-    case FlowKey  => FlowKey("flow-key")
+    case FlowOut(_)  => FlowIn("flow-in")
+    case FlowIn(_)   => FlowIn("flow-in")
+    case BlockKey(_) => FlowKey("flow-key")
+    case FlowKey(_)  => FlowKey("flow-key")
   }
     // Flow Sequences
   // 137
@@ -486,15 +482,15 @@ class YamlParser(source: Source) extends RegexParsers {
   }}
   // 165
   def bChompedLast(t:Chomping):Parser[Any] = t match {
-    case Strip => bNonContent
-    case Clip  => bAsLineFeed
-    case Keep  => bAsLineFeed
+    case Strip(_) => bNonContent
+    case Clip(_)  => bAsLineFeed
+    case Keep(_)  => bAsLineFeed
   }
   // 166
   def lChompedEmpty(n:Int, t:Chomping):Parser[Any] = t match {
-    case Strip => lStripEmpty(n)
-    case Clip  => lStripEmpty(n)
-    case Keep  => lKeepEmpty(n)
+    case Strip(_) => lStripEmpty(n)
+    case Clip(_)  => lStripEmpty(n)
+    case Keep(_)  => lKeepEmpty(n)
   }
   // 167
   def lStripEmpty(n:Int):Parser[Any] = rep(sIndentEqualOrLessThan(n) ~ bNonContent) ~ lTrailComments(n)?
@@ -572,11 +568,11 @@ class YamlParser(source: Source) extends RegexParsers {
   // 199
   def sLpBlockScalar(n:Int, c:Context):Parser[Any] = sSeparate(n + 1, c) ~ opt(cNsProperties(n + 1, c) ~ sSeparate(n + 1, c)) ~ (cLpLiteral(n) | cLpFolded(n))
   // 200
-  def sLpBlockCollection(n:Int, c:Context):Parser[Any] = opt(sSeparate(n + 1, c) ~ cNsProperties(n + 1, c)) ~ sLComments ~ (lpBlockSequence(seqSpace(n, c)) | lpBlockMapping(n))
+  def sLpBlockCollection(n:Int, c:Context):Parser[Any] = log(opt(sSeparate(n + 1, c) ~ cNsProperties(n + 1, c)) ~ sLComments ~ (lpBlockSequence(seqSpace(n, c)) | lpBlockMapping(n)))("200")
   // 201
   def seqSpace(n:Int, c:Context):Int = c match {
-    case BlockOut => n - 1
-    case BlockIn  => n
+    case BlockOut(_) => n - 1
+    case BlockIn(_)  => n
   }
 
   /*
@@ -586,56 +582,54 @@ class YamlParser(source: Source) extends RegexParsers {
   // Documents
     // Document Prefix
   // 202
-  def lDocumentPrefix:Parser[Any] = opt(cByteOrderMask) ~ rep(lComment)
+  def lDocumentPrefix:Parser[Any] = log(opt(cByteOrderMask) ~ rep(lComment))("202")
     // Document Markers
   // 203
-  def cDirectivesEnd:Parser[Any] = "-" ~ "-" ~ "-"
+  def cDirectivesEnd:Parser[Any] = log("-" ~ "-" ~ "-")("203")
   // 204
-  def cDocumentEnd:Parser[Any] = "." ~ "." ~ "."
+  def cDocumentEnd:Parser[Any] = log("." ~ "." ~ ".")("204")
   // 205
-  def lDocumentSuffix:Parser[Any] = cDocumentEnd ~ sLComments
+  def lDocumentSuffix:Parser[Any] = log(cDocumentEnd ~ sLComments)("205")
   // 206
-  def cForbidden:Parser[Any] = (cDirectivesEnd | cDocumentEnd) ~ (bChar | sWhite /*| TODO end of file */)
+  def cForbidden:Parser[Any] = log((cDirectivesEnd | cDocumentEnd) ~ (bChar | sWhite /*| TODO end of file */))("206")
     // Bare Documents
   // 207
-  def lBareDocument:Parser[Any] = sLpBlockNode(-1, BlockIn("block-in"))
+  def lBareDocument:Parser[Any] = log(sLpBlockNode(-1, BlockIn("block-in")))("207")
     // Explicit Documents
   // 208
-  def lExplicitDocument:Parser[Any] = cDirectivesEnd ~ (lBareDocument | (eNode ~ sLComments))
+  def lExplicitDocument:Parser[Any] = log(cDirectivesEnd ~ (lBareDocument | (eNode ~ sLComments)))("208")
     // Directives Documents
   // 209
-  def lDirectiveDocument:Parser[Any] = rep1(lDirective) ~ lExplicitDocument
+  def lDirectiveDocument:Parser[Any] = log(rep1(lDirective) ~ lExplicitDocument)("209")
   // 210
-  def lAnyDocument:Parser[Any] = lDirectiveDocument | lExplicitDocument | lBareDocument
+  def lAnyDocument:Parser[Any] = log(lDirectiveDocument | lExplicitDocument | lBareDocument)("210")
   // 211
-  def lYamlStream:Parser[Any] = rep(lDocumentPrefix) ~ opt(lAnyDocument) ~ rep(rep1(lDocumentSuffix) ~ rep(lDocumentPrefix) ~ opt(lAnyDocument) | rep(lDocumentPrefix) ~ opt(lExplicitDocument))
+  def lYamlStream:Parser[Any] = log(rep(lDocumentPrefix) ~ opt(lAnyDocument) ~ rep(rep1(lDocumentSuffix) ~ rep(lDocumentPrefix) ~ opt(lAnyDocument) | rep(lDocumentPrefix) ~ opt(lExplicitDocument)))("211")
 
 
-  def parse(): Boolean = {
-    /*
-    for (line <- source.getLines()) {
-      parse(cMappingValue, line) match {
-        case Success(matched, _) => logger.debug(matched)
-        case _ => Unit
-      }
+
+
+  def parse(file:String): Boolean = {
+    val result:ParseResult[Any] = parseAll(lYamlStream, new FileReader(file))
+    result match {
+      case Success(_,_) => true
+      case _ => false
     }
-    */
-    true
   }
 }
 
-case class Context(s:String)
-case class BlockOut(override val s: String) extends Context(s)
-case class BlockIn(override val s: String) extends Context(s)
-case class FlowOut(override val s: String) extends Context(s)
-case class FlowIn(override val s: String) extends Context(s)
-case class BlockKey(override val s:String) extends Context(s)
-case class FlowKey(override val s:String) extends Context(s)
+class Context(s:String)
+case class BlockOut(s: String) extends Context(s)
+case class BlockIn(s: String) extends Context(s)
+case class FlowOut(s: String) extends Context(s)
+case class FlowIn(s: String) extends Context(s)
+case class BlockKey(s:String) extends Context(s)
+case class FlowKey(s:String) extends Context(s)
 
-case class Chomping(s:String)
-case class Strip(override val s:String) extends Chomping(s)
-case class Keep(override val s:String) extends Chomping(s)
-case class Clip(override val s:String) extends Chomping(s)
-case class Unknown(override val s:String) extends Chomping(s)
+class Chomping(s:String)
+case class Strip(s:String) extends Chomping(s)
+case class Keep(s:String) extends Chomping(s)
+case class Clip(s:String) extends Chomping(s)
+case class Unknown(s:String) extends Chomping(s)
 
 
