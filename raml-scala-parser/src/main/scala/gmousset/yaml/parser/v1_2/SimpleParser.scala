@@ -13,4 +13,12 @@ class SimpleParser extends RegexParsers{
   def turn:Parser[Any] = log("TURN" ~ direction ~ angle)("turn")
   def direction:Parser[Any] = log("LEFT" | "RIGHT")("direction")
   def angle:Parser[Any] = log("[0-9]+".r)("angle")
+
+  def parseString(string:String):Boolean = {
+    val result:ParseResult[Any] = parseAll(command, string)
+    result match {
+      case Success(_,_) => true
+      case _ => false
+    }
+  }
 }

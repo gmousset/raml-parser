@@ -2,14 +2,14 @@ package gmousset.yaml.parser.v1_2
 
 import java.io.FileReader
 
-import org.slf4j.LoggerFactory
-
 import scala.util.parsing.combinator._
 
 /**
   * Created by Gwendal Mousset on 13/11/2015.
   */
 class YamlParser extends RegexParsers {
+
+  override val skipWhitespace = false
 
   //val logger = LoggerFactory.getLogger(this.getClass)
   var m:Int = _
@@ -182,7 +182,7 @@ class YamlParser extends RegexParsers {
 
   // Separation Spaces
   // 66
-  def sSeparateInLine:Parser[Any] = log(rep1(sWhite) | (startOfLine) <~ "" )("66") // TODO:must add start of line
+  def sSeparateInLine:Parser[Any] = log(rep1(sWhite) | startOfLine <~ "" )("66") // TODO:must add start of line
 
   // TODO
   def startOfLine:Parser[Any] = log("^.*".r)("start of line")
@@ -226,7 +226,7 @@ class YamlParser extends RegexParsers {
   // 78
   def lComment:Parser[Any] = log(sSeparateInLine ~ opt(cNbCommentText) ~ bComment)("78")
   // 79
-  def sLComments:Parser[Any] = log((sBComment /* TODO: must add start of line */) ~ rep(sLComments))("79")
+  def sLComments:Parser[Any] = log(sBComment /* TODO: must add start of line */ ~ rep(sLComments))("79")
 
   // Separation Lines
   // 80
@@ -425,7 +425,7 @@ class YamlParser extends RegexParsers {
   // 144
   def nsFlowMapImplicitEntry(n: Int, c: Context):Parser[Any] = nsFlowMapYamlKeyEntry(n, c) | cNsFlowMapEmptyKeyEntry(n, c) | cNsFlowMapJsonKeyEntry(n, c)
   // 145
-  def nsFlowMapYamlKeyEntry(n: Int, c: Context):Parser[Any] = nsFlowYamlNode(n, c) ~ (opt((sSeparate(n, c)) ~ cNsFlowMapSeparateValue(n, c)) | eNode)
+  def nsFlowMapYamlKeyEntry(n: Int, c: Context):Parser[Any] = nsFlowYamlNode(n, c) ~ (opt(sSeparate(n, c) ~ cNsFlowMapSeparateValue(n, c)) | eNode)
   // 146
   def cNsFlowMapEmptyKeyEntry(n: Int, c: Context):Parser[Any] = eNode ~ cNsFlowMapSeparateValue(n, c)
   // 147
@@ -585,9 +585,9 @@ class YamlParser extends RegexParsers {
   def lDocumentPrefix:Parser[Any] = log(opt(cByteOrderMask) ~ rep(lComment))("202")
     // Document Markers
   // 203
-  def cDirectivesEnd:Parser[Any] = log("-" ~ "-" ~ "-")("203")
+  def cDirectivesEnd:Parser[Any] = log("^---".r)("203")
   // 204
-  def cDocumentEnd:Parser[Any] = log("." ~ "." ~ ".")("204")
+  def cDocumentEnd:Parser[Any] = log("...")("204")
   // 205
   def lDocumentSuffix:Parser[Any] = log(cDocumentEnd ~ sLComments)("205")
   // 206
@@ -611,6 +611,14 @@ class YamlParser extends RegexParsers {
 
   def parse(file:String): Boolean = {
     val result:ParseResult[Any] = parseAll(lExplicitDocument, new FileReader(file))
+    result match {
+      case Success(_,_) => true
+      case _ => false
+    }
+  }
+
+  def parseString(string:String):Boolean = {
+    val result:ParseResult[Any] = parseAll(cDirectivesEnd, string)
     result match {
       case Success(_,_) => true
       case _ => false
