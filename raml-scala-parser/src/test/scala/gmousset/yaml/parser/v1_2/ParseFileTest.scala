@@ -10,7 +10,7 @@ import org.scalatest._
   */
 class ParseFileTest extends FlatSpec with Matchers {
 
-
+/*
   "Parsing" should "be ok" in {
     // open file
     val filename = "/test01.yaml"
@@ -20,13 +20,11 @@ class ParseFileTest extends FlatSpec with Matchers {
 //    parser.parseString("---") shouldBe true
     parser.parse(filepath)
   }
-
-
-/*
-  "Parsing" should "be ok" in {
-    val parser = new SimpleParser
-    parser.parseString("FORWARD 10") shouldBe true
-    //val result:Boolean = parser parseString("TURN LEFT 20")
-  }
 */
+
+
+  "Parsing" should "be ok" in {
+    val parser = new YamlFastParser
+    parser.parseTest shouldBe true
+  }
 }
